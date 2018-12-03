@@ -51,7 +51,7 @@ dependencies {
 
     // Navigation
 
-    implementation deps.navigation.runtime
-    implementation deps.navigation.fragment
+    implementation deps.navigation.runtime_ktx
+    implementation deps.navigation.fragment_ktx
 
 }

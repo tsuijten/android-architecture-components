@@ -17,11 +17,14 @@
 package com.example.android.navigationsample
 
 import android.os.Bundle
+import android.transition.TransitionInflater
 import androidx.fragment.app.Fragment
 import android.view.LayoutInflater
 import android.view.View
 import android.view.ViewGroup
+import android.widget.ImageView
 import android.widget.TextView
+import androidx.core.view.ViewCompat
 
 
 /**
@@ -31,11 +34,16 @@ class UserProfile : Fragment() {
 
     override fun onCreateView(inflater: LayoutInflater, container: ViewGroup?,
                               savedInstanceState: Bundle?): View? {
-
+        sharedElementEnterTransition = TransitionInflater.from(context).inflateTransition(R.transition.shared_element)
+        sharedElementReturnTransition = TransitionInflater.from(context).inflateTransition(R.transition.shared_element)
 
         val view = inflater.inflate(R.layout.fragment_user_profile, container, false)
 
+        val avatar = arguments?.getInt("avatar") ?: 0
         val name = arguments?.getString("userName") ?: "Ali Connors"
+        val avatarView = view.findViewById<ImageView>(R.id.profile_user_avatar)
+        avatarView.setImageResource(avatar)
+        ViewCompat.setTransitionName(avatarView, name)
         view.findViewById<TextView>(R.id.profile_user_name).text = name
         return view
     }

@@ -17,17 +17,18 @@
 package com.example.android.navigationsample
 
 import android.os.Bundle
-import androidx.fragment.app.Fragment
-import androidx.recyclerview.widget.ListAdapter
-import androidx.recyclerview.widget.LinearLayoutManager
-import androidx.recyclerview.widget.RecyclerView
+import android.transition.Explode
 import android.view.LayoutInflater
 import android.view.View
 import android.view.ViewGroup
 import android.widget.ImageView
 import android.widget.TextView
 import androidx.core.os.bundleOf
+import androidx.core.view.ViewCompat
+import androidx.fragment.app.Fragment
 import androidx.navigation.Navigation
+import androidx.navigation.fragment.FragmentNavigatorExtras
+import androidx.recyclerview.widget.RecyclerView
 
 /**
  * Shows a static leaderboard with three users.
@@ -42,7 +43,9 @@ class Leaderboard : Fragment() {
         // Inflate the layout for this fragment
         val view = inflater.inflate(R.layout.fragment_leaderboard, container, false)
 
-        viewAdapter = MyAdapter(arrayOf("Flo", "Ly", "Jo"))
+//        postponeEnterTransition()
+
+        viewAdapter = MyAdapter(this, arrayOf("Flo", "Ly", "Jo"))
 
         recyclerView = view.findViewById<RecyclerView>(R.id.leaderboard_list).apply {
             // use this setting to improve performance if you know that changes
@@ -53,13 +56,24 @@ class Leaderboard : Fragment() {
             adapter = viewAdapter
 
         }
+
+        // Fixes weird reenter transition, but causes problems when popping
+//        view.viewTreeObserver.addOnPreDrawListener(object : ViewTreeObserver.OnPreDrawListener {
+//            override fun onPreDraw(): Boolean {
+//                view.viewTreeObserver.removeOnPreDrawListener(this)
+//                startPostponedEnterTransition()
+//                return true
+//            }
+//        })
+
         return view
+
     }
 
 }
 
-class MyAdapter(private val myDataset: Array<String>) :
-    RecyclerView.Adapter<MyAdapter.ViewHolder>() {
+class MyAdapter(private val fragment: Fragment, private val myDataset: Array<String>) :
+        RecyclerView.Adapter<MyAdapter.ViewHolder>() {
 
     // Provide a reference to the views for each data item
     // Complex data items may need more than one view per item, and
@@ -73,7 +87,7 @@ class MyAdapter(private val myDataset: Array<String>) :
                                     viewType: Int): ViewHolder {
         // create a new view
         val itemView = LayoutInflater.from(parent.context)
-            .inflate(R.layout.list_view_item, parent, false)
+                .inflate(R.layout.list_view_item, parent, false)
 
 
         return ViewHolder(itemView)
@@ -83,17 +97,33 @@ class MyAdapter(private val myDataset: Array<String>) :
     override fun onBindViewHolder(holder: ViewHolder, position: Int) {
         // - get element from your dataset at this position
         // - replace the contents of the view with that element
-        holder.item.findViewById<TextView>(R.id.user_name_text).text = myDataset[position]
+        val userName = myDataset[position]
+        holder.item.findViewById<TextView>(R.id.user_name_text).text = userName
 
-        holder.item.findViewById<ImageView>(R.id.user_avatar_image)
-                .setImageResource(listOfAvatars[position])
+        val avatarImageView = holder.item.findViewById<ImageView>(R.id.user_avatar_image)
+        avatarImageView.setImageResource(listOfAvatars[position])
+        ViewCompat.setTransitionName(avatarImageView, userName)
 
         holder.item.setOnClickListener {
-            val bundle = bundleOf("userName" to myDataset[position])
+
+            val explode = Explode()
+
+            fragment.reenterTransition = explode
+            fragment.enterTransition = explode
+
+            val bundle = bundleOf(
+                    "userName" to userName,
+                    "avatar" to listOfAvatars[position]
+            )
+
+            val extras = FragmentNavigatorExtras(avatarImageView to userName)
 
             Navigation.findNavController(holder.item).navigate(
                     R.id.action_leaderboard_to_userProfile,
-                bundle)
+                    bundle,
+                    null,
+                    extras
+            )
         }
     }
 
